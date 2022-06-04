@@ -71,20 +71,58 @@ module App =
 
         | Display6 ->
             let alertResult =
-                Device.InvokeOnMainThreadAsync (funcTask = fun () ->
-                    task {
-                        let! alert =
-                            Application.Current.MainPage.DisplayAlert("Display Alert", "Confirm", "Ok", "Cancel")
+                Device.InvokeOnMainThreadAsync(
+                    funcTask =
+                        fun () ->
+                            task {
+                                let! alert =
+                                    Application.Current.MainPage.DisplayAlert(
+                                        "Display Alert",
+                                        "Confirm",
+                                        "Ok",
+                                        "Cancel"
+                                    )
 
-                        return AlertResult alert
-                    }) 
+                                return AlertResult alert
+                            }
+                )
 
             model, Cmd.ofAsyncMsg (async { return! (alertResult |> Async.AwaitTask) })
+
+        | Display7 ->
+            let alertResult =
+                Device.InvokeOnMainThreadAsync(
+                    funcTask =
+                        fun () ->
+                            task {
+                                return!
+                                    async {
+                                        let! alert =
+                                            Application.Current.MainPage.DisplayAlert(
+                                                "Display Alert",
+                                                "Confirm",
+                                                "Ok",
+                                                "Cancel"
+                                            )
+                                            |> Async.AwaitTask
+
+                                        return AlertResult alert
+                                    }
+                            }
+                )
+
+            model,
+            Cmd.ofAsyncMsg (
+                async {
+                    let! result = alertResult |> Async.AwaitTask
+                    return result
+                }
+            )
 
         | AlertResult value ->
             System.Console.WriteLine $"AlertResult is {value}"
             model, Cmd.none
-        
+
 
     let view model =
         Application(
@@ -105,6 +143,7 @@ module App =
                         Button("Display4", Display4)
                         Button("Display5", Display5)
                         Button("Display6", Display6)
+                        Button("Display7", Display7)
                     })
                         .centerVertical (expand = true)
                 }

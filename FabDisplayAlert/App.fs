@@ -10,58 +10,58 @@ module App =
     type Model = { Count: int }
 
     type Msg =
-        | Display1
-        | Display2
-        | Display3
-        | Display4
-        | Display5
-        | Display6
-        | Display7
+        | Alert1
+        | Alert2
+        | Alert3
+        | Alert4
+        | Alert5
+        | Alert6
+        | Alert7
         | AlertResult of bool
 
     let init () = { Count = 0 }, Cmd.none
 
     let update msg model =
         match msg with
-        | Display1 ->
-            Application.Current.MainPage.DisplayAlert("Game over", "Yup1", "OK")
+        | Alert1 ->
+            Application.Current.MainPage.DisplayAlert("Alert 1", "Yup", "OK")
             |> ignore
 
             model, Cmd.none
 
-        | Display2 ->
+        | Alert2 ->
             Application.Current.Dispatcher.BeginInvokeOnMainThread (fun () ->
-                Application.Current.MainPage.DisplayAlert("Game over", "Yup2", "OK")
+                Application.Current.MainPage.DisplayAlert("Alert 2", "Yup", "OK")
                 |> ignore)
 
             model, Cmd.none
 
-        | Display3 ->
+        | Alert3 ->
             async {
                 do!
-                    Application.Current.MainPage.DisplayAlert("Game over", "Yup1", "OK")
+                    Application.Current.MainPage.DisplayAlert("Alert 3", "Yup3", "OK")
                     |> Async.AwaitTask
             }
             |> Async.StartImmediate
 
             model, Cmd.none
 
-        | Display4 ->
+        | Alert4 ->
             Application.Current.Dispatcher.BeginInvokeOnMainThread (fun () ->
                 async {
                     do!
-                        Application.Current.MainPage.DisplayAlert("Game over", "Yup1", "OK")
+                        Application.Current.MainPage.DisplayAlert("Alert 4", "Yup", "OK")
                         |> Async.AwaitTask
                 }
                 |> Async.StartImmediate)
 
             model, Cmd.none
 
-        | Display5 ->
+        | Alert5 ->
             let alertResult =
                 async {
                     let! alert =
-                        Application.Current.MainPage.DisplayAlert("Display Alert", "Confirm", "Ok", "Cancel")
+                        Application.Current.MainPage.DisplayAlert("Alert 5", "Confirm", "Ok", "Cancel")
                         |> Async.AwaitTask
 
                     return AlertResult alert
@@ -69,19 +69,14 @@ module App =
 
             model, Cmd.ofAsyncMsg alertResult
 
-        | Display6 ->
+        | Alert6 ->
             let alertResult =
                 Device.InvokeOnMainThreadAsync(
                     funcTask =
                         fun () ->
                             task {
                                 let! alert =
-                                    Application.Current.MainPage.DisplayAlert(
-                                        "Display Alert",
-                                        "Confirm",
-                                        "Ok",
-                                        "Cancel"
-                                    )
+                                    Application.Current.MainPage.DisplayAlert("Alert 6", "Confirm", "Ok", "Cancel")
 
                                 return AlertResult alert
                             }
@@ -89,7 +84,7 @@ module App =
 
             model, Cmd.ofAsyncMsg (async { return! (alertResult |> Async.AwaitTask) })
 
-        | Display7 ->
+        | Alert7 ->
             let alertResult =
                 Device.InvokeOnMainThreadAsync(
                     funcTask =
@@ -99,7 +94,7 @@ module App =
                                     async {
                                         let! alert =
                                             Application.Current.MainPage.DisplayAlert(
-                                                "Display Alert",
+                                                "Alert 7",
                                                 "Confirm",
                                                 "Ok",
                                                 "Cancel"
@@ -125,6 +120,17 @@ module App =
 
 
     let view model =
+        let description desc works =
+            (HStack() {
+                if works then
+                     Label("✅")
+                         .textColor (Color.Green.ToFabColor())
+                 else
+                     Label("❌").textColor (Color.Red.ToFabColor())
+                Label(desc)
+            })
+                .margin (Thickness(5., 0.))
+
         Application(
             ContentPage(
                 "FabDisplayAlert",
@@ -134,16 +140,26 @@ module App =
                         .centerTextHorizontal ()
 
                     (VStack() {
-                        Label($"Count is {model.Count}")
-                            .centerTextHorizontal ()
+                        description "Call DisplayAlert directly from update ignoring the Task result" false
+                        Button("Alert 1", Alert1)
 
-                        Button("Display1", Display1)
-                        Button("Display2", Display2)
-                        Button("Display3", Display3)
-                        Button("Display4", Display4)
-                        Button("Display5", Display5)
-                        Button("Display6", Display6)
-                        Button("Display7", Display7)
+                        description "Call DisplayAlert directly scheduled on the Dispatcher main thread, ignoring the Task result" true
+                        Button("Alert 2", Alert2)
+
+                        description "Await a DisplayAlert task from an async computation started on the update thread" false
+                        Button("Alert 3", Alert3)
+                        
+                        description "Await a DisplayAlert task from an async computation started on the Dispatcher main thread" true
+                        Button("Alert 4", Alert4)
+                        
+                        description "Await a DisplayAlert task from an async computation executed by Cmd.ofAsyncMsg" false
+                        Button("Alert 5", Alert5)
+
+                        description "Await a task calling DisplayAlert that is executed on the Device main thread from Cmd.ofAsyncMsg" true
+                        Button("Alert 6", Alert6)
+                        
+                        description "Call DisplayAlert through task/async computations on the Device main thread from Cmd.ofAsyncMsg in the same manner as FabulousContacts " false
+                        Button("Alert 7", Alert7)
                     })
                         .centerVertical (expand = true)
                 }
